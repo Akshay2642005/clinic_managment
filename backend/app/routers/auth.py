@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.database import get_pool
 from app.schemas.patient import PatientCreate, PatientOut, PatientLogin
-from app.services import patient_service
+from app.schemas.doctor import DoctorLogin
+from app.services import patient_service, doctor_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -29,4 +30,16 @@ async def login(login_data: PatientLogin, pool: Pool = Depends(get_pool)):
     return {
         "message": "Login successful",
         "patient": patient
+    }
+
+
+@router.post("/doctor/login")
+async def doctor_login(login_data: DoctorLogin, pool: Pool = Depends(get_pool)):
+    doctor = await doctor_service.get_doctor_by_identifier(pool, login_data.phone)
+    if not doctor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found.")
+    
+    return {
+        "message": "Login successful",
+        "doctor": doctor
     }
