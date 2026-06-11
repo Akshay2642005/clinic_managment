@@ -9,9 +9,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-this-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()
