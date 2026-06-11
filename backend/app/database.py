@@ -7,7 +7,7 @@ pool: Pool | None = None
 
 async def connect():
     global pool
-    pool = await create_pool(settings.DATABASE_URL)
+    pool = await create_pool(settings.DATABASE_URL, min_size=1, max_size=5)
 
 
 async def disconnect():
