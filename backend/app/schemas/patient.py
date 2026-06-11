@@ -1,24 +1,32 @@
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel, EmailStr
 
 
 class PatientCreate(BaseModel):
-    full_name: str
-    email: EmailStr
-    phone: str | None = None
-    date_of_birth: date | None = None
+    first_name: str
+    last_name: str | None = None
+    gender: str | None = None
+    dob: date | None = None
+    phone: str
 
 
 class PatientUpdate(BaseModel):
-    full_name: str | None = None
-    email: EmailStr | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    gender: str | None = None
+    dob: date | None = None
     phone: str | None = None
-    date_of_birth: date | None = None
 
 
 class PatientOut(BaseModel):
-    id: int
-    full_name: str
-    email: EmailStr
-    phone: str | None = None
-    date_of_birth: date | None = None
+    patient_id: int
+    first_name: str
+    last_name: str | None = None
+    gender: str | None = None
+    dob: date | None = None
+    phone: str
+    created_at: datetime | None = None
+
+
+class PatientLogin(BaseModel):
+    phone: str
