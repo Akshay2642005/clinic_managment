@@ -7,8 +7,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/clinic_db"
 
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()
