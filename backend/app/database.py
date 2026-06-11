@@ -1,5 +1,6 @@
 from asyncpg import Pool, create_pool
 from app.core.config import settings
+import asyncpg
 
 pool: Pool | None = None
 
@@ -18,3 +19,10 @@ async def disconnect():
 def get_pool() -> Pool:
     assert pool is not None, "Database pool not initialized"
     return pool
+# dependencies.py
+
+#search feature addition
+async def get_db() -> asyncpg.Connection:
+    async with get_pool().acquire() as conn:
+        yield conn
+
