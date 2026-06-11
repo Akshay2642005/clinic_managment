@@ -6,9 +6,12 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/clinic_db"
+    SECRET_KEY: str = "change-this-in-production"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()
