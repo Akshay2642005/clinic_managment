@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Clinic Management API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/clinic_db"
+    DATABASE_URL: str = "postgresql://<user>:<password>@<host>:<port>/clinic"
     SECRET_KEY: str = "change-this-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 

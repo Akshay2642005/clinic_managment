@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.database import connect, disconnect
 from app.routers import patients, staff, auth, doctor_search_routes, patientsearch, appointments
+from app.routers import schedule
 
 
 @asynccontextmanager
@@ -23,3 +24,5 @@ app.include_router(doctor_search_routes.router, prefix="/api/v1")
 app.include_router(patientsearch.router, prefix="/api/v1")
 app.include_router(appointments.router, prefix="/api/v1")
 
+#schedule publishing
+app.include_router(schedule.router, prefix="/api/v1")
