@@ -9,3 +9,8 @@ async def get_doctor_by_identifier(pool: Pool, phone: str) -> DoctorOut | None:
     if row:
         return DoctorOut(**dict(row))
     return None
+
+async def get_all_active(pool: Pool):
+    query = "SELECT * FROM doctors"
+    rows = await pool.fetch(query)
+    return [DoctorOut(**dict(r)) for r in rows]
