@@ -120,3 +120,10 @@ export const doctorApi = {
   }
 };
 
+export const staffApi = {
+  createStaff: async (data: { full_name: string, email?: string, phone?: string, role: string, specialty?: string, status?: string }): Promise<any> => {
+    const response = await api.post('/staff/', data);
+    return response.data;
+  }
+};
+
