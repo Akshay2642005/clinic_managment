@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Query
 from asyncpg import Pool
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 from app.database import get_pool
 from app.schemas.doctor import DoctorOut
-from app.schemas.appointment import AppointmentBook, AppointmentOut, SlotOut, AppointmentReschedule
+from app.schemas.appointment import AppointmentBook, AppointmentOut, SlotOut, AppointmentReschedule, AppointmentDetailOut
 from app.services import appointment_service, doctor_service
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
@@ -51,3 +51,24 @@ async def reschedule_appointment(appointment_id: int, data: AppointmentReschedul
     Reschedule an appointment by changing its associated slot to a new available slot.
     """
     return await appointment_service.reschedule_appointment(pool, appointment_id, data)
+
+@router.get("/", response_model=List[AppointmentDetailOut])
+async def get_appointments(
+    doctor_id: Optional[int] = Query(None, description="Filter by Doctor ID"),
+    patient_id: Optional[int] = Query(None, description="Filter by Patient ID"),
+    date: Optional[date] = Query(None, description="Filter by date (YYYY-MM-DD)"),
+    doctor_name: Optional[str] = Query(None, description="Filter by Doctor Name"),
+    patient_name: Optional[str] = Query(None, description="Filter by Patient Name"),
+    pool: Pool = Depends(get_pool)
+):
+    """
+    Get all appointments, optionally filtered by doctor, patient, or date.
+    """
+    return await appointment_service.get_appointments(pool, doctor_id, patient_id, date, doctor_name, patient_name)
+
+@router.put("/complete/{appointment_id}", response_model=AppointmentOut)
+async def complete_appointment(appointment_id: int, pool: Pool = Depends(get_pool)):
+    """
+    Mark an appointment as completed, mark its slot as completed, and log to history.
+    """
+    return await appointment_service.complete_appointment(pool, appointment_id)
