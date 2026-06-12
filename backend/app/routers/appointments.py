@@ -4,8 +4,8 @@ from datetime import date
 from typing import List
 
 from app.database import get_pool
-from app.schemas.appointment import AppointmentBook, AppointmentOut, SlotOut
 from app.schemas.doctor import DoctorOut
+from app.schemas.appointment import AppointmentBook, AppointmentOut, SlotOut, AppointmentReschedule
 from app.services import appointment_service, doctor_service
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
@@ -37,3 +37,17 @@ async def book_appointment(data: AppointmentBook, pool: Pool = Depends(get_pool)
     The slot will be marked as 'booked'.
     """
     return await appointment_service.book_appointment(pool, data)
+
+@router.put("/cancel/{appointment_id}", response_model=AppointmentOut)
+async def cancel_appointment(appointment_id: int, pool: Pool = Depends(get_pool)):
+    """
+    Cancel an appointment by marking its status as 'cancelled' and freeing up the slot.
+    """
+    return await appointment_service.cancel_appointment(pool, appointment_id)
+
+@router.put("/reschedule/{appointment_id}", response_model=AppointmentOut)
+async def reschedule_appointment(appointment_id: int, data: AppointmentReschedule, pool: Pool = Depends(get_pool)):
+    """
+    Reschedule an appointment by changing its associated slot to a new available slot.
+    """
+    return await appointment_service.reschedule_appointment(pool, appointment_id, data)

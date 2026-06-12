@@ -20,3 +20,6 @@ class SlotOut(BaseModel):
     doctor_id: int
     slot_time: datetime
     status: str
+
+class AppointmentReschedule(BaseModel):
+    new_slot_id: int
