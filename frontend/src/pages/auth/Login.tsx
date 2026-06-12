@@ -38,14 +38,20 @@ export default function Login() {
         localStorage.setItem('currentUser', JSON.stringify(response.patient));
         navigate('/patient');
       } else if (role === 'Doctor') {
+        const response = await authApi.doctorLogin({ phone });
+        localStorage.setItem('currentUser', JSON.stringify(response.doctor));
         navigate('/doctor');
       } else {
         navigate('/staff');
       }
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
-        // New patient → go to register page, pass phone number along
-        navigate('/patient/register', { state: { phone } });
+        if (role === 'Patient') {
+          // New patient → go to register page, pass phone number along
+          navigate('/patient/register', { state: { phone } });
+        } else {
+          setError('Doctor not found. Please contact administration.');
+        }
       } else {
         setError('An error occurred. Please try again.');
       }

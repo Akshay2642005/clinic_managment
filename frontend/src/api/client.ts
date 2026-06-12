@@ -24,6 +24,11 @@ export const authApi = {
     const response = await api.post<PatientOut>('/auth/signup', data);
     return response.data;
   },
+  // Doctor login
+  doctorLogin: async (data: { phone: string }): Promise<{ message: string; doctor: any }> => {
+    const response = await api.post<{ message: string; doctor: any }>('/auth/doctor/login', data);
+    return response.data;
+  },
 };
 
 export const patientsApi = {
@@ -31,6 +36,15 @@ export const patientsApi = {
   searchByPhone: async (phone: string): Promise<PatientWithAppointments | null> => {
     try {
       const response = await api.post<PatientWithAppointments[]>('/patients/search', { phone });
+      return response.data[0] ?? null;
+    } catch {
+      return null;
+    }
+  },
+  // Fetch a patient + their appointments by ID
+  searchById: async (patientId: number): Promise<PatientWithAppointments | null> => {
+    try {
+      const response = await api.post<PatientWithAppointments[]>('/patients/search', { patient_id: patientId });
       return response.data[0] ?? null;
     } catch {
       return null;
@@ -54,6 +68,19 @@ export const appointmentsApi = {
       patient_id: patientId,
       slot_id: slotId
     });
+    return response.data;
+  }
+};
+
+export const doctorApi = {
+  searchAppointments: async (doctorId: number, dateStr: string): Promise<any> => {
+    const response = await api.get('/doctor/appointments/search', {
+      params: { doctor_id: doctorId, search_date: dateStr }
+    });
+    return response.data;
+  },
+  publishSchedule: async (doctorId: number): Promise<any> => {
+    const response = await api.post(`/publish_schedule/${doctorId}`);
     return response.data;
   }
 };

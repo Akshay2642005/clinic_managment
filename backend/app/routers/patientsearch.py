@@ -14,14 +14,14 @@ async def search_patient(
     payload: PatientSearchRequest,
     db: asyncpg.Connection = Depends(get_db),
 ):
-    if not payload.phone and not payload.name:
+    if not payload.phone and not payload.name and not payload.patient_id:
         raise HTTPException(
             status_code=422,
-            detail="Provide at least one search parameter: 'phone' or 'name'.",
+            detail="Provide at least one search parameter: 'phone', 'name', or 'patient_id'.",
         )
 
     try:
-        results = await search_patients(db=db, phone=payload.phone, name=payload.name)
+        results = await search_patients(db=db, phone=payload.phone, name=payload.name, patient_id=payload.patient_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
