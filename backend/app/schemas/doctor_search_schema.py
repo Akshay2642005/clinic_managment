@@ -17,7 +17,7 @@ class PatientInfo(BaseModel):
 
 class AppointmentHistoryEntry(BaseModel):
     history_id: int
-    old_status: str
+    old_status: Optional[str] = None
     new_status: str
     changed_at: datetime
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, User, Clock, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -23,6 +23,8 @@ interface Slot {
 
 export default function BookAppointment() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const rescheduleApptId = location.state?.rescheduleApptId;
   
   // Get logged-in patient
   const stored = localStorage.getItem('currentUser');
@@ -91,7 +93,11 @@ export default function BookAppointment() {
     setError('');
 
     try {
-      await appointmentsApi.bookAppointment(patient.patient_id, selectedSlotId);
+      if (rescheduleApptId) {
+        await appointmentsApi.rescheduleAppointment(rescheduleApptId, selectedSlotId);
+      } else {
+        await appointmentsApi.bookAppointment(patient.patient_id, selectedSlotId);
+      }
       setSuccess(true);
       setTimeout(() => {
         navigate('/patient');
@@ -125,8 +131,12 @@ export default function BookAppointment() {
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Book an Appointment</h1>
-            <p className="text-sm text-gray-500">Select your preferred doctor, date, and slot time.</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {rescheduleApptId ? 'Reschedule Appointment' : 'Book an Appointment'}
+            </h1>
+            <p className="text-sm text-gray-500">
+              Select your preferred doctor, date, and slot time.
+            </p>
           </div>
         </div>
 
@@ -135,8 +145,12 @@ export default function BookAppointment() {
             <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4 text-green-500">
               <CheckCircle2 size={40} className="animate-bounce" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
-            <p className="text-gray-500">Your appointment has been successfully scheduled.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {rescheduleApptId ? 'Reschedule Confirmed!' : 'Booking Confirmed!'}
+            </h2>
+            <p className="text-gray-500">
+              Your appointment has been successfully {rescheduleApptId ? 'rescheduled' : 'scheduled'}.
+            </p>
             <p className="text-xs text-gray-400 mt-6">Redirecting you to dashboard...</p>
           </Card>
         ) : (
@@ -312,7 +326,7 @@ export default function BookAppointment() {
                     className="w-full justify-center text-center font-bold tracking-wide"
                     size="lg"
                   >
-                    {submitting ? 'CONFIRMING...' : 'CONFIRM BOOKING'}
+                    {submitting ? 'CONFIRMING...' : (rescheduleApptId ? 'CONFIRM RESCHEDULE' : 'CONFIRM BOOKING')}
                   </Button>
                 </div>
               </Card>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalendarIcon, LogOut, Clock, CheckCircle, Search, User, PlusCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, LogOut, Clock, CheckCircle, Search, User, Settings, X } from 'lucide-react';
 import { doctorApi, patientsApi } from '../../api/client';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -47,6 +47,15 @@ export default function DoctorDashboard() {
   const [loadingDate, setLoadingDate] = useState(false);
 
   const [publishing, setPublishing] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [scheduleConfig, setScheduleConfig] = useState({
+    day_of_week: 0,
+    start_time: '09:00:00',
+    end_time: '17:00:00',
+    slot_duration: 30
+  });
+  const [modalLoading, setModalLoading] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -105,13 +114,19 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handlePublishSchedule = async () => {
+  const handleSaveSchedule = async () => {
     if (!doctor) return;
-    setPublishing(true);
+    setModalLoading(true);
     try {
-      await doctorApi.publishSchedule(doctor.doctor_id);
-      alert('Schedule published successfully!');
-      // Refresh today's schedule if on today tab
+      // 1. Upsert config
+      await doctorApi.createSchedule(doctor.doctor_id, scheduleConfig);
+      // 2. Rebuild slots
+      await doctorApi.updateSchedule(doctor.doctor_id, scheduleConfig);
+      
+      alert('Schedule configured and slots generated successfully!');
+      setIsModalOpen(false);
+      
+      // Refresh today
       if (activeTab === 'today') {
         const todayStr = new Date().toISOString().split('T')[0];
         setLoadingToday(true);
@@ -120,9 +135,9 @@ export default function DoctorDashboard() {
         setLoadingToday(false);
       }
     } catch {
-      alert('Failed to publish schedule.');
+      alert('Failed to update schedule. Check your inputs.');
     } finally {
-      setPublishing(false);
+      setModalLoading(false);
     }
   };
 
@@ -188,10 +203,9 @@ export default function DoctorDashboard() {
           <Button 
             variant="outline" 
             className="flex items-center gap-2 text-[#2563eb] border-[#2563eb] hover:bg-blue-50" 
-            onClick={handlePublishSchedule}
-            disabled={publishing}
+            onClick={() => setIsModalOpen(true)}
           >
-            <PlusCircle size={16} /> {publishing ? 'Publishing...' : 'Add Schedule / Slots'}
+            <Settings size={16} /> Manage Schedule
           </Button>
         </div>
 
@@ -323,6 +337,78 @@ export default function DoctorDashboard() {
           )}
         </Card>
       </main>
+
+      {/* Schedule Configuration Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-lg font-bold text-gray-900">Manage Schedule</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700">Day of the Week</label>
+                <select 
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white focus:ring-2 focus:ring-[#2563eb] focus:border-transparent outline-none"
+                  value={scheduleConfig.day_of_week}
+                  onChange={(e) => setScheduleConfig({...scheduleConfig, day_of_week: Number(e.target.value)})}
+                >
+                  <option value={0}>Monday</option>
+                  <option value={1}>Tuesday</option>
+                  <option value={2}>Wednesday</option>
+                  <option value={3}>Thursday</option>
+                  <option value={4}>Friday</option>
+                  <option value={5}>Saturday</option>
+                  <option value={6}>Sunday</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">Start Time</label>
+                  <Input 
+                    type="time" 
+                    step="1"
+                    value={scheduleConfig.start_time} 
+                    onChange={(e) => setScheduleConfig({...scheduleConfig, start_time: e.target.value})} 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">End Time</label>
+                  <Input 
+                    type="time" 
+                    step="1"
+                    value={scheduleConfig.end_time} 
+                    onChange={(e) => setScheduleConfig({...scheduleConfig, end_time: e.target.value})} 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700">Slot Duration (mins)</label>
+                <Input 
+                  type="number" 
+                  min="5" 
+                  step="5"
+                  value={scheduleConfig.slot_duration} 
+                  onChange={(e) => setScheduleConfig({...scheduleConfig, slot_duration: Number(e.target.value)})} 
+                />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
+              <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveSchedule} disabled={modalLoading}>
+                {modalLoading ? 'Saving...' : 'Save & Publish'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
