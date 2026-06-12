@@ -69,6 +69,16 @@ export const appointmentsApi = {
       slot_id: slotId
     });
     return response.data;
+  },
+  cancelAppointment: async (appointmentId: number): Promise<any> => {
+    const response = await api.put(`/appointments/cancel/${appointmentId}`);
+    return response.data;
+  },
+  rescheduleAppointment: async (appointmentId: number, newSlotId: number): Promise<any> => {
+    const response = await api.put(`/appointments/reschedule/${appointmentId}`, {
+      new_slot_id: newSlotId
+    });
+    return response.data;
   }
 };
 
@@ -81,6 +91,14 @@ export const doctorApi = {
   },
   publishSchedule: async (doctorId: number): Promise<any> => {
     const response = await api.post(`/publish_schedule/${doctorId}`);
+    return response.data;
+  },
+  createSchedule: async (doctorId: number, data: { day_of_week: number, start_time: string, end_time: string, slot_duration: number }): Promise<any> => {
+    const response = await api.post(`/create_schedule/${doctorId}`, null, { params: data });
+    return response.data;
+  },
+  updateSchedule: async (doctorId: number, data: { day_of_week: number, start_time: string, end_time: string, slot_duration: number }): Promise<any> => {
+    const response = await api.put(`/update_schedule/${doctorId}`, null, { params: data });
     return response.data;
   }
 };

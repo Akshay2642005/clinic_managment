@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarPlus, LogOut, Clock, CheckCircle, XCircle, Calendar } from 'lucide-react';
-import { patientsApi } from '../../api/client';
+import { CalendarPlus, LogOut, Clock, CheckCircle, XCircle, Calendar, Edit2, Trash2 } from 'lucide-react';
+import { patientsApi, appointmentsApi } from '../../api/client';
 import type { PatientOut, AppointmentOut } from '../../types/api';
 
-function AppointmentCard({ appt }: { appt: AppointmentOut }) {
+function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: (id: number) => void }) {
+  const navigate = useNavigate();
   const statusColor: Record<string, string> = {
     scheduled: 'bg-blue-50 text-blue-700 border-blue-100',
     completed: 'bg-green-50 text-green-700 border-green-100',
@@ -27,16 +28,36 @@ function AppointmentCard({ appt }: { appt: AppointmentOut }) {
         {appt.doctor?.specialization && (
           <p className="text-xs text-gray-500 mt-0.5">{appt.doctor.specialization}</p>
         )}
-        <p className="text-xs text-gray-400 mt-1">
-          Appointment #{appt.appointment_id} · Slot #{appt.slot_id}
-        </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Appointment #{appt.appointment_id} · Slot #{appt.slot_id}
+          </p>
+        </div>
+        
+        {appt.status === 'scheduled' && (
+          <div className="flex flex-col gap-2 shrink-0 ml-4 mr-2">
+            <button 
+              onClick={() => navigate('/patient/book', { state: { rescheduleApptId: appt.appointment_id } })}
+              className="flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-md font-semibold transition-colors"
+            >
+              <Edit2 size={12} /> Reschedule
+            </button>
+            <button 
+              onClick={() => onCancel && onCancel(appt.appointment_id)}
+              className="flex items-center justify-center gap-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md font-semibold transition-colors"
+            >
+              <Trash2 size={12} /> Cancel
+            </button>
+          </div>
+        )}
+
+        <div className="text-right">
+          <p className="text-xs text-gray-400 whitespace-nowrap">
+            {new Date(appt.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+        </div>
       </div>
-      <p className="text-xs text-gray-400 whitespace-nowrap">
-        {new Date(appt.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-      </p>
-    </div>
-  );
-}
+    );
+  }
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -46,17 +67,31 @@ export default function PatientDashboard() {
   const [appointments, setAppointments] = useState<AppointmentOut[]>([]);
   const [loadingAppts, setLoadingAppts] = useState(true);
 
+  const fetchAppointments = () => {
+    if (!patient) return;
+    patientsApi.searchByPhone(patient.phone).then((data) => {
+      setAppointments(data?.appointments ?? []);
+      setLoadingAppts(false);
+    });
+  };
+
   useEffect(() => {
     if (!patient) {
       navigate('/');
       return;
     }
-    // Fetch this patient's appointments using their phone
-    patientsApi.searchByPhone(patient.phone).then((data) => {
-      setAppointments(data?.appointments ?? []);
-      setLoadingAppts(false);
-    });
+    fetchAppointments();
   }, []);
+
+  const handleCancel = async (id: number) => {
+    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+    try {
+      await appointmentsApi.cancelAppointment(id);
+      fetchAppointments();
+    } catch {
+      alert('Failed to cancel appointment.');
+    }
+  };
 
   const upcoming = appointments.filter((a) => a.status === 'scheduled');
   const history = appointments.filter((a) => a.status !== 'scheduled');
@@ -137,7 +172,7 @@ export default function PatientDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {upcoming.map((a) => <AppointmentCard key={a.appointment_id} appt={a} />)}
+              {upcoming.map((a) => <AppointmentCard key={a.appointment_id} appt={a} onCancel={handleCancel} />)}
             </div>
           )}
         </section>
