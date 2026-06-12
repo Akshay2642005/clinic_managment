@@ -70,6 +70,19 @@ export const appointmentsApi = {
     });
     return response.data;
   },
+  getAppointments: async (dateStr?: string): Promise<any[]> => {
+    const params: any = {};
+    if (dateStr) params.date = dateStr;
+    const response = await api.get('/appointments/', { params });
+    return response.data;
+  },
+  searchAppointments: async (doctorName?: string, patientName?: string): Promise<any[]> => {
+    const params: any = {};
+    if (doctorName) params.doctor_name = doctorName;
+    if (patientName) params.patient_name = patientName;
+    const response = await api.get('/appointments/', { params });
+    return response.data;
+  },
   cancelAppointment: async (appointmentId: number): Promise<any> => {
     const response = await api.put(`/appointments/cancel/${appointmentId}`);
     return response.data;
@@ -79,7 +92,7 @@ export const appointmentsApi = {
       new_slot_id: newSlotId
     });
     return response.data;
-  }
+  },
 };
 
 export const doctorApi = {
