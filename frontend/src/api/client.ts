@@ -93,6 +93,10 @@ export const appointmentsApi = {
     });
     return response.data;
   },
+  completeAppointment: async (appointmentId: number): Promise<any> => {
+    const response = await api.put(`/appointments/complete/${appointmentId}`);
+    return response.data;
+  },
 };
 
 export const doctorApi = {

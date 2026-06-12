@@ -46,8 +46,6 @@ export default function DoctorDashboard() {
   const [dateAppointments, setDateAppointments] = useState<DoctorAppointment[]>([]);
   const [loadingDate, setLoadingDate] = useState(false);
 
-  const [publishing, setPublishing] = useState(false);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [scheduleConfig, setScheduleConfig] = useState({
     day_of_week: 0,

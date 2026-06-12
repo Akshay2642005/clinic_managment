@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CalendarDays, Zap, User } from 'lucide-react';
+import { Search, CalendarDays, Zap } from 'lucide-react';
 import AppointmentCard from '../components/ui/AppointmentCard';
 import SearchAppointmentsModal from '../components/ui/SearchAppointmentsModal';
 import { appointmentsApi } from '../api/client';
