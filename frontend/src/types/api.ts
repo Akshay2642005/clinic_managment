@@ -37,6 +37,7 @@ export interface DoctorSearchOut {
 export interface AppointmentOut {
   appointment_id: number;
   slot_id: number;
+  slot_time: string;
   status: string;
   created_at: string;
   updated_at: string;

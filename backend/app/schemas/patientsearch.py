@@ -52,6 +52,7 @@ class DoctorSearchOut(BaseModel):
 class AppointmentSearchOut(BaseModel):
     appointment_id: int
     slot_id: int
+    slot_time: datetime
     status: str
     created_at: datetime
     updated_at: datetime
