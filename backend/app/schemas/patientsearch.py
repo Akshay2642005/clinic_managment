@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 
 class PatientSearchRequest(BaseModel):
+    patient_id: Optional[int] = None
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     phone: Optional[str] = None
 
@@ -65,4 +66,4 @@ class PatientSearchOut(BaseModel):
     dob: Optional[date] = None
     phone: Optional[str] = None
     created_at: datetime
-    appointments: List[AppointmentSearchOut] = []
+    appointments: List[AppointmentSearchOut] = []

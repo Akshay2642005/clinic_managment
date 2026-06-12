@@ -6,6 +6,7 @@ async def search_patients(
     db: asyncpg.Connection,
     phone: Optional[str] = None,
     name: Optional[str] = None,
+    patient_id: Optional[int] = None,
 ) -> list[dict]:
 
     conditions = []
@@ -20,6 +21,11 @@ async def search_patients(
     if name:
         conditions.append(f"LOWER(p.first_name || ' ' || p.last_name) LIKE LOWER(${idx})")
         params.append(f"%{name}%")
+        idx += 1
+
+    if patient_id:
+        conditions.append(f"p.patient_id = ${idx}")
+        params.append(patient_id)
         idx += 1
 
     if not conditions:
