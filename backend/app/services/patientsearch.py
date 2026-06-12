@@ -45,6 +45,7 @@ async def search_patients(
 
             a.appointment_id,
             a.slot_id,
+            s.slot_time,
             a.status,
             a.created_at          AS appointment_created_at,
             a.updated_at          AS appointment_updated_at,
@@ -58,6 +59,7 @@ async def search_patients(
 
         FROM patients p
         LEFT JOIN appointments a ON a.patient_id = p.patient_id
+        LEFT JOIN slots s        ON s.slot_id = a.slot_id
         LEFT JOIN doctors d      ON d.doctor_id  = a.doctor_id
         WHERE {where_clause}
         ORDER BY p.patient_id, a.appointment_id
@@ -98,6 +100,7 @@ async def search_patients(
             patient_map[pid]["appointments"].append({
                 "appointment_id": row["appointment_id"],
                 "slot_id":        row["slot_id"],
+                "slot_time":      row["slot_time"],
                 "status":         row["status"],
                 "created_at":     row["appointment_created_at"],
                 "updated_at":     row["appointment_updated_at"],

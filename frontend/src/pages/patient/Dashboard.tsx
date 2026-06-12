@@ -50,9 +50,12 @@ function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: 
           </div>
         )}
 
-        <div className="text-right">
-          <p className="text-xs text-gray-400 whitespace-nowrap">
-            {new Date(appt.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+        <div className="text-right flex flex-col justify-center">
+          <p className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+            {new Date(appt.slot_time || appt.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+          <p className="text-xs text-gray-500 whitespace-nowrap">
+            {new Date(appt.slot_time || appt.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
           </p>
         </div>
       </div>
