@@ -4,10 +4,18 @@ from datetime import date
 from typing import List
 
 from app.database import get_pool
+from app.schemas.doctor import DoctorOut
 from app.schemas.appointment import AppointmentBook, AppointmentOut, SlotOut, AppointmentReschedule
-from app.services import appointment_service
+from app.services import appointment_service, doctor_service
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
+
+@router.get("/doctors", response_model=List[DoctorOut])
+async def get_doctors(pool: Pool = Depends(get_pool)):
+    """
+    Get all active doctors.
+    """
+    return await doctor_service.get_all_active(pool)
 
 @router.get("/slots/available", response_model=List[SlotOut])
 async def get_available_slots(
