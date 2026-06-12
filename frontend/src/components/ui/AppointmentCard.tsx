@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, X, AlertTriangle, CalendarDays } from 'lucide-react';
+import { User, X, AlertTriangle, CalendarDays, CheckCircle } from 'lucide-react';
 import { appointmentsApi } from '../../api/client';
 
 interface AppointmentCardProps {
@@ -16,6 +16,7 @@ interface AppointmentCardProps {
 export default function AppointmentCard({ appointmentId, doctorId, rawDate, date, time, patient, doctor, onRefresh }: AppointmentCardProps) {
   const [month, day] = date.split(' ');
 
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
@@ -29,6 +30,16 @@ export default function AppointmentCard({ appointmentId, doctorId, rawDate, date
         .catch(console.error);
     }
   }, [showRescheduleModal, doctorId, rescheduleDate]);
+
+  const handleComplete = async () => {
+    try {
+      await appointmentsApi.completeAppointment(appointmentId);
+      setShowCompleteModal(false);
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleCancel = async () => {
     try {
@@ -86,6 +97,12 @@ export default function AppointmentCard({ appointmentId, doctorId, rawDate, date
             Reschedule
           </button>
           <button
+            onClick={() => setShowCompleteModal(true)}
+            className="text-emerald-600 hover:bg-emerald-50 hover:text-emerald-800 px-3 py-2 rounded-lg transition-all uppercase cursor-pointer"
+          >
+            Complete
+          </button>
+          <button
             onClick={() => setShowCancelModal(true)}
             className="text-red-500 hover:bg-red-50 hover:text-red-700 px-3 py-2 rounded-lg transition-all uppercase cursor-pointer"
           >
@@ -93,6 +110,37 @@ export default function AppointmentCard({ appointmentId, doctorId, rawDate, date
           </button>
         </div>
       </div>
+
+      {/* Complete Modal */}
+      {showCompleteModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4 border border-gray-100">
+            <div className="flex items-center gap-3 text-emerald-600 mb-4">
+              <div className="bg-emerald-50 p-2 rounded-full">
+                <CheckCircle size={24} className="text-emerald-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Complete Appointment</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+              Mark the appointment for <span className="font-semibold text-gray-900">{patient}</span> as completed?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowCompleteModal(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl text-sm font-bold tracking-wide uppercase transition-colors"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={handleComplete}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold tracking-wide uppercase transition-colors shadow-sm"
+              >
+                Confirm Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Modal */}
       {showCancelModal && (
