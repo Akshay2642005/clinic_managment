@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr
 
 class StaffCreate(BaseModel):
     full_name: str
-    email: EmailStr
+    email: EmailStr | None = None
     phone: str | None = None
     role: str
     specialty: str | None = None
