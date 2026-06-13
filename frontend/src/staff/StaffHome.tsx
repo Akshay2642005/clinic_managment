@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, CalendarDays, Zap } from 'lucide-react';
 import AppointmentCard from '../components/ui/AppointmentCard';
 import SearchAppointmentsModal from '../components/ui/SearchAppointmentsModal';
+import AddStaffModal from '../components/ui/AddStaffModal';
 import { appointmentsApi } from '../api/client';
 
 export default function StaffHome() {
@@ -12,6 +13,7 @@ export default function StaffHome() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
 
   const fetchAppointments = () => {
     appointmentsApi.getAppointments(selectedDate)
@@ -59,7 +61,15 @@ export default function StaffHome() {
         <div className="text-[#1A56DB] text-xl font-bold font-serif">
           Alexandria Clinic
         </div>
-        <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setIsAddStaffModalOpen(true)}
+            className="bg-[#1A56DB] hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-1.5"
+          >
+            + Add Staff
+          </button>
+          <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -184,6 +194,13 @@ export default function StaffHome() {
         onRefresh={() => {
           handleSearch();
           fetchAppointments();
+        }}
+      />
+      <AddStaffModal
+        isOpen={isAddStaffModalOpen}
+        onClose={() => setIsAddStaffModalOpen(false)}
+        onSuccess={() => {
+          // Could refresh something here if needed
         }}
       />
     </div>
