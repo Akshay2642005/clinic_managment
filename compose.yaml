@@ -8,6 +8,17 @@ services:
       - "8000:8000"
     restart: unless-stopped
 
+  agent:
+    build:
+      context: ./agent
+    env_file:
+      - ./agent/.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -15,4 +26,5 @@ services:
       - "80:80"
     depends_on:
       - backend
+      - agent
     restart: unless-stopped

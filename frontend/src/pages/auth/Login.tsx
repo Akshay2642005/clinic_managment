@@ -42,6 +42,7 @@ export default function Login() {
         localStorage.setItem('currentUser', JSON.stringify(response.doctor));
         navigate('/doctor');
       } else {
+        localStorage.setItem('currentUser', JSON.stringify({ staff_name: 'Staff', role: 'staff' }));
         navigate('/staff');
       }
     } catch (err: any) {
