@@ -5,6 +5,7 @@ import { doctorApi, patientsApi } from '../../api/client';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { ChatWidget } from '../../components/chat';
 
 // Temporary types until backend sync if missing
 interface Doctor {
@@ -60,22 +61,32 @@ export default function DoctorDashboard() {
     navigate('/');
   };
 
+  const fetchTodayAppointments = () => {
+    if (!doctor || !doctor.doctor_id) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    setLoadingToday(true);
+    doctorApi.searchAppointments(doctor.doctor_id, todayStr)
+      .then(data => {
+        setTodayAppointments(data.appointments || []);
+      })
+      .catch(() => setTodayAppointments([]))
+      .finally(() => setLoadingToday(false));
+  };
+
   useEffect(() => {
     if (!doctor || !doctor.doctor_id) {
       navigate('/');
       return;
     }
-    // Fetch today's appointments
     if (activeTab === 'today') {
-      const todayStr = new Date().toISOString().split('T')[0];
-      setLoadingToday(true);
-      doctorApi.searchAppointments(doctor.doctor_id, todayStr)
-        .then(data => {
-          setTodayAppointments(data.appointments || []);
-        })
-        .catch(() => setTodayAppointments([]))
-        .finally(() => setLoadingToday(false));
+      fetchTodayAppointments();
     }
+
+    const onChanged = () => {
+      if (activeTab === 'today') fetchTodayAppointments();
+    };
+    window.addEventListener('appointment-changed', onChanged);
+    return () => window.removeEventListener('appointment-changed', onChanged);
   }, [activeTab]);
 
   const handleSearchPatient = async (e: React.FormEvent) => {
@@ -407,6 +418,7 @@ export default function DoctorDashboard() {
           </div>
         </div>
       )}
+      <ChatWidget />
     </div>
   );
 }

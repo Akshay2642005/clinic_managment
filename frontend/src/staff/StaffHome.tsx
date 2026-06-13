@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, CalendarDays, Zap } from 'lucide-react';
 import AppointmentCard from '../components/ui/AppointmentCard';
 import SearchAppointmentsModal from '../components/ui/SearchAppointmentsModal';
+import { ChatWidget } from '../components/chat';
 import AddStaffModal from '../components/ui/AddStaffModal';
 import { appointmentsApi } from '../api/client';
 
@@ -45,6 +46,10 @@ export default function StaffHome() {
 
   useEffect(() => {
     fetchAppointments();
+
+    const onChanged = () => fetchAppointments();
+    window.addEventListener('appointment-changed', onChanged);
+    return () => window.removeEventListener('appointment-changed', onChanged);
   }, [selectedDate]);
 
   const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
@@ -196,6 +201,7 @@ export default function StaffHome() {
           fetchAppointments();
         }}
       />
+      <ChatWidget />
       <AddStaffModal
         isOpen={isAddStaffModalOpen}
         onClose={() => setIsAddStaffModalOpen(false)}

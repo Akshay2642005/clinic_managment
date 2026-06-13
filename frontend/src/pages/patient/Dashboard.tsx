@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CalendarPlus, LogOut, Clock, CheckCircle, XCircle, Calendar, Edit2, Trash2 } from 'lucide-react';
 import { patientsApi, appointmentsApi } from '../../api/client';
 import type { PatientOut, AppointmentOut } from '../../types/api';
+import { ChatWidget } from '../../components/chat';
 
 function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: (id: number) => void }) {
   const navigate = useNavigate();
@@ -84,6 +85,10 @@ export default function PatientDashboard() {
       return;
     }
     fetchAppointments();
+
+    const onChanged = () => fetchAppointments();
+    window.addEventListener('appointment-changed', onChanged);
+    return () => window.removeEventListener('appointment-changed', onChanged);
   }, []);
 
   const handleCancel = async (id: number) => {
@@ -205,6 +210,7 @@ export default function PatientDashboard() {
         </section>
 
       </main>
+      <ChatWidget />
     </div>
   );
 }
