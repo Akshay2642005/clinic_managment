@@ -8,6 +8,7 @@ from shared.backend_client import close_client
 from orchestrator.session import session_store
 from orchestrator.router import classify_intent
 from booking.agent import handle_booking
+from schedule_manager.agent import handle_schedule_change
 
 
 @asynccontextmanager
@@ -34,9 +35,17 @@ async def chat(request: ChatRequest):
 
     session_store.add_message(session_id, "user", request.message)
 
-    existing_state = session_store.get_state(session_id, "booking_state", None)
-    if existing_state and existing_state != "idle":
+    # Resume an in-progress booking session
+    existing_booking_state = session_store.get_state(session_id, "booking_state", None)
+    if existing_booking_state and existing_booking_state != "idle":
         response = await handle_booking(request, session_store)
+        session_store.add_message(session_id, "assistant", response.response)
+        return response
+
+    # Resume an in-progress schedule manager session (cancel / reschedule)
+    existing_schedule_state = session_store.get_state(session_id, "schedule_state", None)
+    if existing_schedule_state and existing_schedule_state != "idle":
+        response = await handle_schedule_change(request, session_store)
         session_store.add_message(session_id, "assistant", response.response)
         return response
 
@@ -45,14 +54,16 @@ async def chat(request: ChatRequest):
 
     if intent in ("booking_symptom", "booking_name"):
         response = await handle_booking(request, session_store)
+    elif intent in ("cancel", "reschedule"):
+        response = await handle_schedule_change(request, session_store)
     elif intent == "search":
         response = ChatResponse(response="Search functionality is coming soon! Our team is working on role-aware search for appointments, patients, and schedules.")
     elif intent == "advisory":
         response = ChatResponse(response="Pre-visit preparation advice is coming soon! Our team is working on personalized checklists for fasting, medications, and documents based on your appointment specialty.")
     else:
         response = ChatResponse(
-            response="Hello! I'm your clinic AI assistant. I can help you book appointments and prepare for your visit. How can I help you today?",
-            suggestions=["I need to book an appointment"],
+            response="Hello! I'm your clinic AI assistant. I can help you book, cancel, or reschedule appointments. How can I help you today?",
+            suggestions=["I need to book an appointment", "Cancel my appointment", "Reschedule my appointment"],
         )
 
     session_store.add_message(session_id, "assistant", response.response)
