@@ -3,6 +3,8 @@ from orchestrator.llm import chat_completion
 INTENT_PROMPT = """Classify the user's message into exactly one of:
 - booking_symptom: patient describes symptoms, pain, medical issue ("my chest hurts", "I have a fever")
 - booking_name: patient wants to book with a specific doctor ("book with Dr. Smith")
+- cancel: user wants to cancel, delete, or remove an existing appointment ("cancel my appointment", "I want to cancel with Dr. Lee")
+- reschedule: user wants to reschedule, change, move, or modify the time/date of an existing appointment ("reschedule my appointment", "move my booking to Friday", "change my appointment with Dr. Smith")
 - search: user wants to find, look up, or view appointments, patients, or schedules
 - advisory: user asks about preparation, precautions, fasting, what to bring before an appointment
 - general: greeting, help, thanks, or unclear
