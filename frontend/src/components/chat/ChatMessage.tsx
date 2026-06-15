@@ -2,9 +2,10 @@ interface ChatMessageProps {
   role: 'user' | 'assistant';
   content: string;
   data?: Record<string, any> | null;
+  buttons?: { label: string; action: () => void; disabled?: boolean; primary?: boolean }[];
 }
 
-export default function ChatMessage({ role, content, data }: ChatMessageProps) {
+export default function ChatMessage({ role, content, data, buttons }: ChatMessageProps) {
   const isUser = role === 'user';
 
   return (
@@ -66,6 +67,27 @@ export default function ChatMessage({ role, content, data }: ChatMessageProps) {
           <div className="mt-3 text-xs border-t border-inherit pt-3">
             <div className="font-semibold">Appointment #{data.appointment.appointment_id}</div>
             <div>Status: {data.appointment.status}</div>
+          </div>
+        )}
+
+        {buttons && buttons.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {buttons.map((btn, i) => (
+              <button
+                key={i}
+                onClick={btn.action}
+                disabled={btn.disabled}
+                className={`text-sm px-4 py-2 rounded-xl transition-all ${
+                  btn.disabled 
+                    ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500' 
+                    : btn.primary
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                      : 'bg-white hover:bg-gray-50 text-blue-700 border border-blue-200 shadow-sm'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
           </div>
         )}
       </div>
