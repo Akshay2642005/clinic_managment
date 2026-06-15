@@ -54,6 +54,7 @@ class AppointmentSearchOut(BaseModel):
     slot_id: int
     slot_time: datetime
     status: str
+    message: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     doctor: Optional[DoctorSearchOut] = None

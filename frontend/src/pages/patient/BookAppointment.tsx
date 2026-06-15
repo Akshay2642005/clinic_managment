@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
-import { appointmentsApi } from "../../api/client";
+import { appointmentsApi, agentApi } from "../../api/client";
 import type { PatientOut } from "../../types/api";
 
 interface Doctor {
@@ -46,6 +46,7 @@ export default function BookAppointment() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
   const [reasonForVisit, setReasonForVisit] = useState("");
+  const [advisoryChecklist, setAdvisoryChecklist] = useState<string | null>(null);
 
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -112,12 +113,32 @@ export default function BookAppointment() {
         await appointmentsApi.bookAppointment(
           patient.patient_id,
           selectedSlotId,
+          reasonForVisit
         );
+
+        if (reasonForVisit) {
+          try {
+            const agentResp = await agentApi.chat({
+              message: `Give me pre-visit preparation checklist: ${reasonForVisit}`,
+              session_id: `booking-${Date.now()}`,
+              user_context: {
+                role: "patient",
+                user_id: patient.patient_id,
+                name: `${patient.first_name} ${patient.last_name || ""}`
+              }
+            });
+            if (agentResp && agentResp.response) {
+              setAdvisoryChecklist(agentResp.response);
+            }
+          } catch (agentErr) {
+            console.error("Failed to get advisory checklist", agentErr);
+          }
+        }
       }
       setSuccess(true);
       setTimeout(() => {
         navigate("/patient");
-      }, 2000);
+      }, 5000); // 5 seconds to read the checklist
     } catch (err: any) {
       if (err.response?.data?.detail) {
         setError(err.response.data.detail);
@@ -171,8 +192,18 @@ export default function BookAppointment() {
               Your appointment has been successfully{" "}
               {rescheduleApptId ? "rescheduled" : "scheduled"}.
             </p>
+            
+            {advisoryChecklist && (
+              <div className="mt-6 p-6 bg-blue-50/50 rounded-xl border border-blue-100 text-left w-full max-w-2xl mx-auto shadow-sm">
+                <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider mb-3">Pre-Visit Preparation</h3>
+                <div className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
+                  {advisoryChecklist.replace("Pre-Visit Preparation\n", "")}
+                </div>
+              </div>
+            )}
+
             <p className="text-xs text-gray-400 mt-6">
-              Redirecting you to dashboard...
+              Redirecting you to dashboard in a few seconds...
             </p>
           </Card>
         ) : (

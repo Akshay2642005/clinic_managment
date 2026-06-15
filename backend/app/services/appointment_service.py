@@ -39,11 +39,11 @@ async def book_appointment(pool: Pool, data: AppointmentBook) -> AppointmentOut:
             # 3. Create appointment
             row = await conn.fetchrow(
                 """
-                INSERT INTO appointments (patient_id, doctor_id, slot_id, status)
-                VALUES ($1, $2, $3, 'scheduled')
+                INSERT INTO appointments (patient_id, doctor_id, slot_id, status, message)
+                VALUES ($1, $2, $3, 'scheduled', $4)
                 RETURNING *
                 """,
-                data.patient_id, slot["doctor_id"], data.slot_id
+                data.patient_id, slot["doctor_id"], data.slot_id, data.message
             )
             
             # 4. Update slot status

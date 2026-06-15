@@ -42,6 +42,7 @@ export interface AppointmentOut {
   created_at: string;
   updated_at: string;
   doctor?: DoctorSearchOut | null;
+  message?: string | null;
 }
 
 export interface PatientWithAppointments {
