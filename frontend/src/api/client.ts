@@ -63,10 +63,11 @@ export const appointmentsApi = {
     });
     return response.data;
   },
-  bookAppointment: async (patientId: number, slotId: number): Promise<any> => {
+  bookAppointment: async (patientId: number, slotId: number, message?: string): Promise<any> => {
     const response = await api.post('/appointments/book', {
       patient_id: patientId,
-      slot_id: slotId
+      slot_id: slotId,
+      message: message
     });
     return response.data;
   },
@@ -127,3 +128,10 @@ export const staffApi = {
   }
 };
 
+export const agentApi = {
+  chat: async (data: { message: string, session_id: string, user_context: any }): Promise<any> => {
+    // Agent is running on port 8080
+    const response = await axios.post('http://localhost:8080/api/agent/chat', data);
+    return response.data;
+  }
+};

@@ -1,12 +1,44 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarPlus, LogOut, Clock, CheckCircle, XCircle, Calendar, Edit2, Trash2 } from 'lucide-react';
-import { patientsApi, appointmentsApi } from '../../api/client';
+import { CalendarPlus, LogOut, Clock, CheckCircle, XCircle, Calendar, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { patientsApi, appointmentsApi, agentApi } from '../../api/client';
 import type { PatientOut, AppointmentOut } from '../../types/api';
 import { ChatWidget } from '../../components/chat';
 
 function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: (id: number) => void }) {
   const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [advisoryChecklist, setAdvisoryChecklist] = useState<string | null>(null);
+  const [loadingAdvisory, setLoadingAdvisory] = useState(false);
+
+  const stored = localStorage.getItem('currentUser');
+  const patient: PatientOut | null = stored ? JSON.parse(stored) : null;
+
+  const handleExpand = async () => {
+    setIsExpanded(!isExpanded);
+    if (!isExpanded && !advisoryChecklist && appt.message && patient) {
+      setLoadingAdvisory(true);
+      try {
+        const agentResp = await agentApi.chat({
+          message: `Give me pre-visit preparation checklist: ${appt.message}`,
+          session_id: `advisory-${appt.appointment_id}-${Date.now()}`,
+          user_context: {
+            role: "patient",
+            user_id: patient.patient_id,
+            name: `${patient.first_name} ${patient.last_name || ""}`
+          }
+        });
+        if (agentResp && agentResp.response) {
+          setAdvisoryChecklist(agentResp.response);
+        }
+      } catch (err) {
+        console.error("Failed to load advisory", err);
+      } finally {
+        setLoadingAdvisory(false);
+      }
+    }
+  };
+
   const statusColor: Record<string, string> = {
     scheduled: 'bg-blue-50 text-blue-700 border-blue-100',
     completed: 'bg-green-50 text-green-700 border-green-100',
@@ -15,34 +47,35 @@ function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: 
   const StatusIcon = appt.status === 'completed' ? CheckCircle : appt.status === 'cancelled' ? XCircle : Clock;
 
   return (
-    <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusColor[appt.status] ?? 'bg-gray-50 text-gray-600 border-gray-100'}`}>
-        <StatusIcon size={12} />
-        {appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">
-          {appt.doctor
-            ? `Dr. ${appt.doctor.first_name} ${appt.doctor.last_name}`
-            : 'Doctor not assigned'}
-        </p>
-        {appt.doctor?.specialization && (
-          <p className="text-xs text-gray-500 mt-0.5">{appt.doctor.specialization}</p>
-        )}
+    <div className="flex flex-col bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+      <div className="flex items-start gap-4 p-4">
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusColor[appt.status] ?? 'bg-gray-50 text-gray-600 border-gray-100'}`}>
+          <StatusIcon size={12} />
+          {appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900">
+            {appt.doctor
+              ? `Dr. ${appt.doctor.first_name} ${appt.doctor.last_name}`
+              : 'Doctor not assigned'}
+          </p>
+          {appt.doctor?.specialization && (
+            <p className="text-xs text-gray-500 mt-0.5">{appt.doctor.specialization}</p>
+          )}
           <p className="text-xs text-gray-400 mt-1">
             Appointment #{appt.appointment_id} · Slot #{appt.slot_id}
           </p>
         </div>
-        
+
         {appt.status === 'scheduled' && (
           <div className="flex flex-col gap-2 shrink-0 ml-4 mr-2">
-            <button 
+            <button
               onClick={() => navigate('/patient/book', { state: { rescheduleApptId: appt.appointment_id } })}
               className="flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-md font-semibold transition-colors"
             >
               <Edit2 size={12} /> Reschedule
             </button>
-            <button 
+            <button
               onClick={() => onCancel && onCancel(appt.appointment_id)}
               className="flex items-center justify-center gap-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md font-semibold transition-colors"
             >
@@ -51,17 +84,46 @@ function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: 
           </div>
         )}
 
-        <div className="text-right flex flex-col justify-center">
-          <p className="text-sm font-semibold text-gray-700 whitespace-nowrap">
-            {new Date(appt.slot_time || appt.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </p>
-          <p className="text-xs text-gray-500 whitespace-nowrap">
-            {new Date(appt.slot_time || appt.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-          </p>
+        <div className="text-right flex flex-col justify-center items-end gap-2">
+          <div>
+            <p className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+              {new Date(appt.slot_time || appt.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+            <p className="text-xs text-gray-500 whitespace-nowrap">
+              {new Date(appt.slot_time || appt.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+            </p>
+          </div>
+          {appt.message && (
+            <button
+              onClick={handleExpand}
+              className="p-1.5 rounded-full hover:bg-blue-50 text-blue-600 transition-colors border border-blue-100 shadow-sm"
+              title="View Pre-Visit Preparation"
+            >
+              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          )}
         </div>
       </div>
-    );
-  }
+
+      {isExpanded && appt.message && (
+        <div className="border-t border-gray-100 bg-blue-50/40 p-5 animate-fade-in">
+          <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2">Pre-Visit Preparation</h3>
+          {loadingAdvisory ? (
+            <div className="text-sm text-blue-500 animate-pulse font-medium">Generating your checklist...</div>
+          ) : advisoryChecklist ? (
+            <div className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
+              {advisoryChecklist.replace("Pre-Visit Preparation\n", "")}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500">
+              <span className="font-semibold text-gray-700">Reason for visit:</span> "{appt.message}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PatientDashboard() {
   const navigate = useNavigate();

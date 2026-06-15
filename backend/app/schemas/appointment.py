@@ -5,6 +5,7 @@ from pydantic import BaseModel
 class AppointmentBook(BaseModel):
     patient_id: int
     slot_id: int
+    message: Optional[str] = None
 
 class AppointmentOut(BaseModel):
     appointment_id: int
@@ -28,3 +29,4 @@ class AppointmentDetailOut(AppointmentOut):
     patient_name: str
     doctor_name: str
     slot_time: datetime
+    message: Optional[str] = None
