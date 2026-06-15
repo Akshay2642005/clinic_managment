@@ -59,7 +59,8 @@ async def chat(request: ChatRequest):
     elif intent == "search":
         response = ChatResponse(response="Search functionality is coming soon! Our team is working on role-aware search for appointments, patients, and schedules.")
     elif intent == "advisory":
-        response = ChatResponse(response="Pre-visit preparation advice is coming soon! Our team is working on personalized checklists for fasting, medications, and documents based on your appointment specialty.")
+        from advisory.agent import handle_advisory
+        response = await handle_advisory(request, session_store)
     else:
         response = ChatResponse(
             response="Hello! I'm your clinic AI assistant. I can help you book, cancel, or reschedule appointments. How can I help you today?",
