@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarPlus, LogOut, Clock, CheckCircle, XCircle, Calendar, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-import { patientsApi, appointmentsApi, agentApi } from '../../api/client';
+import { patientsApi, appointmentsApi } from '../../api/client';
 import type { PatientOut, AppointmentOut } from '../../types/api';
 import { ChatWidget } from '../../components/chat';
 
@@ -106,13 +106,22 @@ export default function PatientDashboard() {
 
   const [appointments, setAppointments] = useState<AppointmentOut[]>([]);
   const [loadingAppts, setLoadingAppts] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchAppointments = () => {
     if (!patient) return;
-    patientsApi.searchByPhone(patient.phone).then((data) => {
-      setAppointments(data?.appointments ?? []);
-      setLoadingAppts(false);
-    });
+    setLoadingAppts(true);
+    setFetchError(null);
+    patientsApi.searchByPhone(patient.phone)
+      .then((data) => {
+        setAppointments(data?.appointments ?? []);
+        setLoadingAppts(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch appointments:", err);
+        setFetchError("Unable to load your appointments. Please try again later.");
+        setLoadingAppts(false);
+      });
   };
 
   useEffect(() => {
@@ -207,7 +216,15 @@ export default function PatientDashboard() {
           </div>
 
           {loadingAppts ? (
-            <div className="py-10 text-center text-gray-400 text-sm">Loading appointments…</div>
+            <div className="py-10 flex flex-col items-center justify-center text-gray-400 text-sm">
+              <span className="w-8 h-8 mb-3 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></span>
+              Loading appointments…
+            </div>
+          ) : fetchError ? (
+            <div className="py-8 text-center bg-red-50 rounded-xl border border-red-200">
+              <p className="text-sm font-semibold text-red-600">{fetchError}</p>
+              <button onClick={fetchAppointments} className="mt-3 text-xs bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-4 py-2 rounded-lg transition-colors">Try Again</button>
+            </div>
           ) : upcoming.length === 0 ? (
             <div className="py-8 text-center bg-white rounded-xl border border-dashed border-gray-200">
               <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
@@ -233,7 +250,12 @@ export default function PatientDashboard() {
             )}
           </div>
 
-          {loadingAppts ? null : history.length === 0 ? (
+          {loadingAppts ? (
+            <div className="py-10 flex flex-col items-center justify-center text-gray-400 text-sm">
+              <span className="w-8 h-8 mb-3 border-4 border-gray-200 border-t-gray-400 rounded-full animate-spin"></span>
+              Loading history…
+            </div>
+          ) : fetchError ? null : history.length === 0 ? (
             <div className="py-8 text-center bg-white rounded-xl border border-dashed border-gray-200">
               <CheckCircle size={32} className="mx-auto text-gray-300 mb-2" />
               <p className="text-sm text-gray-400">No appointment history yet.</p>

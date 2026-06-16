@@ -71,18 +71,18 @@ export default function ChatMessage({ role, content, data, buttons }: ChatMessag
         )}
 
         {buttons && buttons.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-inherit">
             {buttons.map((btn, i) => (
               <button
                 key={i}
                 onClick={btn.action}
                 disabled={btn.disabled}
-                className={`text-sm px-4 py-2 rounded-xl transition-all ${
+                className={`text-sm px-4 py-2.5 rounded-xl font-medium transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center ${
                   btn.disabled 
-                    ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500' 
+                    ? 'opacity-60 cursor-not-allowed bg-gray-100 text-gray-500 border border-gray-200' 
                     : btn.primary
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-                      : 'bg-white hover:bg-gray-50 text-blue-700 border border-blue-200 shadow-sm'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md border border-blue-600'
+                      : 'bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 hover:border-blue-300'
                 }`}
               >
                 {btn.label}

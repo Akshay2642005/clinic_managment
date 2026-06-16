@@ -2,12 +2,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from shared.models import ChatRequest, ChatResponse
 from shared.backend_client import close_client
 from orchestrator.session import session_store
 from orchestrator.router import classify_intent
 from booking.agent import handle_booking
+from booking.symptom_matcher import match_symptoms
 from schedule_manager.agent import handle_schedule_change
 
 
@@ -69,3 +71,27 @@ async def chat(request: ChatRequest):
 
     session_store.add_message(session_id, "assistant", response.response)
     return response
+
+
+class SymptomRequest(BaseModel):
+    symptoms: str
+
+
+class SpecialtyResponse(BaseModel):
+    specialty: str | None
+    confidence: str
+    reason: str
+
+
+@app.post("/api/agent/match-specialty", response_model=SpecialtyResponse)
+async def match_specialty_endpoint(request: SymptomRequest):
+    """
+    Calls the existing AI symptom_matcher service to detect the appropriate
+    medical specialty from a patient's described symptoms.
+    """
+    result = await match_symptoms(request.symptoms)
+    return SpecialtyResponse(
+        specialty=result.get("specialization") or None,
+        confidence=result.get("confidence", "low"),
+        reason=result.get("reason", ""),
+    )
