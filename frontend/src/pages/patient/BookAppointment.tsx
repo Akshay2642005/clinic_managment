@@ -110,12 +110,7 @@ export default function BookAppointment() {
           selectedSlotId,
         );
       } else {
-        await appointmentsApi.bookAppointment(
-          patient.patient_id,
-          selectedSlotId,
-          reasonForVisit
-        );
-
+        let generatedTips = null;
         if (reasonForVisit) {
           try {
             const agentResp = await agentApi.chat({
@@ -128,12 +123,20 @@ export default function BookAppointment() {
               }
             });
             if (agentResp && agentResp.response) {
-              setAdvisoryChecklist(agentResp.response);
+              generatedTips = agentResp.response;
+              setAdvisoryChecklist(generatedTips);
             }
           } catch (agentErr) {
             console.error("Failed to get advisory checklist", agentErr);
           }
         }
+
+        await appointmentsApi.bookAppointment(
+          patient.patient_id,
+          selectedSlotId,
+          reasonForVisit,
+          generatedTips
+        );
       }
       setSuccess(true);
       setTimeout(() => {

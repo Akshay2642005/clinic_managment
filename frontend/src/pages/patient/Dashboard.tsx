@@ -8,35 +8,9 @@ import { ChatWidget } from '../../components/chat';
 function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: (id: number) => void }) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [advisoryChecklist, setAdvisoryChecklist] = useState<string | null>(null);
-  const [loadingAdvisory, setLoadingAdvisory] = useState(false);
 
-  const stored = localStorage.getItem('currentUser');
-  const patient: PatientOut | null = stored ? JSON.parse(stored) : null;
-
-  const handleExpand = async () => {
+  const handleExpand = () => {
     setIsExpanded(!isExpanded);
-    if (!isExpanded && !advisoryChecklist && appt.message && patient) {
-      setLoadingAdvisory(true);
-      try {
-        const agentResp = await agentApi.chat({
-          message: `Give me pre-visit preparation checklist: ${appt.message}`,
-          session_id: `advisory-${appt.appointment_id}-${Date.now()}`,
-          user_context: {
-            role: "patient",
-            user_id: patient.patient_id,
-            name: `${patient.first_name} ${patient.last_name || ""}`
-          }
-        });
-        if (agentResp && agentResp.response) {
-          setAdvisoryChecklist(agentResp.response);
-        }
-      } catch (err) {
-        console.error("Failed to load advisory", err);
-      } finally {
-        setLoadingAdvisory(false);
-      }
-    }
   };
 
   const statusColor: Record<string, string> = {
@@ -106,17 +80,17 @@ function AppointmentCard({ appt, onCancel }: { appt: AppointmentOut, onCancel?: 
       </div>
 
       {isExpanded && appt.message && (
-        <div className="border-t border-gray-100 bg-blue-50/40 p-5 animate-fade-in">
-          <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2">Pre-Visit Preparation</h3>
-          {loadingAdvisory ? (
-            <div className="text-sm text-blue-500 animate-pulse font-medium">Generating your checklist...</div>
-          ) : advisoryChecklist ? (
-            <div className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
-              {advisoryChecklist.replace("Pre-Visit Preparation\n", "")}
-            </div>
-          ) : (
-            <div className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">Reason for visit:</span> "{appt.message}"
+        <div className="border-t border-gray-100 bg-blue-50/40 p-5 animate-fade-in space-y-3">
+          <div className="text-sm text-gray-700">
+            <span className="font-semibold text-gray-900">Reason for visit:</span> "{appt.message}"
+          </div>
+          
+          {appt.previsit_tips && (
+            <div>
+              <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2">Pre-Visit Preparation</h3>
+              <div className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
+                {appt.previsit_tips.replace("Pre-Visit Preparation\n", "")}
+              </div>
             </div>
           )}
         </div>

@@ -43,6 +43,7 @@ export interface AppointmentOut {
   updated_at: string;
   doctor?: DoctorSearchOut | null;
   message?: string | null;
+  previsit_tips?: string | null;
 }
 
 export interface PatientWithAppointments {
