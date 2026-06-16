@@ -20,6 +20,8 @@ interface FlowData {
   time?: string;
   appointmentId?: number;
   appointmentDetails?: any;
+  symptoms?: string;
+  previsitTips?: string;
 }
 
 type ChatState = 
@@ -168,6 +170,35 @@ export default function ChatWidget() {
     try {
       const match = await detectSpecialty(text);
 
+      let previsitTips = '';
+      try {
+        const currentUser = getCurrentUser();
+        const res = await fetch('/api/agent/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `What is the pre-visit preparation checklist for ${text}`,
+            session_id: 'adv_' + Date.now(),
+            user_context: {
+              role: getUserRole(),
+              user_id: currentUser?.patient_id || currentUser?.doctor_id || null,
+              name: currentUser?.first_name || currentUser?.staff_name || '',
+              phone: currentUser?.phone || '',
+            }
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.data?.advisory?.protocols) {
+            previsitTips = data.data.advisory.protocols.map((p: string) => `- ${p}`).join('\n');
+          } else {
+            previsitTips = data.response || '';
+          }
+        }
+      } catch (err) {
+        console.error("Advisory error", err);
+      }
+
       if (!match.specialty) {
         appendBotMessage("I couldn't determine the appropriate specialist. Please provide more details about your symptoms.");
         return;
@@ -194,7 +225,7 @@ export default function ChatWidget() {
         appendBotMessage(`I recommend the ${specialty} department, but no doctors are currently available for this specialty.`);
         setChatState('IDLE');
       } else {
-        setFlowData(prev => ({ ...prev, department: specialty }));
+        setFlowData(prev => ({ ...prev, department: specialty, symptoms: text, previsitTips }));
         setChatState('BOOK_DOCTOR');
         const reason = match.reason ? ` — ${match.reason}` : '';
         appendBotMessage(`I recommend the **${specialty}** department${reason}. Please select a doctor.`, deptDocs.map((doc: any) => ({
@@ -339,11 +370,26 @@ export default function ChatWidget() {
     
     setLoading(true);
     try {
-      const payload = { patient_id: user.patient_id, slot_id: flowDataRef.current.slotId };
+      const payload = { 
+        patient_id: user.patient_id, 
+        slot_id: flowDataRef.current.slotId,
+        message: flowDataRef.current.symptoms,
+        previsit_tips: flowDataRef.current.previsitTips
+      };
       console.log("Booking payload:", payload);
       
-      await appointmentsApi.bookAppointment(user.patient_id, flowDataRef.current.slotId!);
-      appendBotMessage(`Appointment confirmed for ${flowDataRef.current.date} at ${flowDataRef.current.time}.`);
+      await appointmentsApi.bookAppointment(
+        user.patient_id, 
+        flowDataRef.current.slotId!,
+        flowDataRef.current.symptoms,
+        flowDataRef.current.previsitTips
+      );
+      
+      let confirmMsg = `Appointment confirmed for ${flowDataRef.current.date} at ${flowDataRef.current.time}.`;
+      if (flowDataRef.current.previsitTips) {
+        confirmMsg += `\n\n**Pre-visit Preparation Checklist:**\n${flowDataRef.current.previsitTips}`;
+      }
+      appendBotMessage(confirmMsg);
       window.dispatchEvent(new CustomEvent('appointment-changed'));
     } catch (error: any) {
       console.error("Booking error:", error);
