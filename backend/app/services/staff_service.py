@@ -1,5 +1,4 @@
 from asyncpg import Pool
-
 from app.schemas.staff import StaffCreate, StaffOut
 
 
@@ -24,8 +23,10 @@ async def create(pool: Pool, staff_in: StaffCreate) -> StaffOut:
             staff_in.specialty,
             is_active,
         )
+
         full_name = f"{row['first_name']} {row['last_name']}".strip()
         status = "active" if row['is_active'] else "inactive"
+
         return StaffOut(
             id=row['doctor_id'],
             full_name=full_name,
@@ -35,19 +36,29 @@ async def create(pool: Pool, staff_in: StaffCreate) -> StaffOut:
             specialty=row['specialization'],
             status=status
         )
+
     else:
+        # Split full_name into first_name and last_name
+        name_parts = staff_in.full_name.strip().split(" ", 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+
         row = await pool.fetchrow(
             """
-            INSERT INTO staff (staff_name, phone)
-            VALUES ($1, $2)
-            RETURNING staff_id, staff_name, phone
+            INSERT INTO staff (first_name, last_name, phone)
+            VALUES ($1, $2, $3)
+            RETURNING staff_id, first_name, last_name, phone
             """,
-            staff_in.full_name,
+            first_name,
+            last_name,
             staff_in.phone or "",
         )
+
+        full_name = f"{row['first_name']} {row['last_name']}".strip()
+
         return StaffOut(
             id=row['staff_id'],
-            full_name=row['staff_name'],
+            full_name=full_name,
             email=staff_in.email,
             phone=row['phone'],
             role=staff_in.role,
@@ -68,10 +79,12 @@ async def get_all(pool: Pool) -> list[StaffOut]:
             specialization AS specialty, 
             CASE WHEN is_active = TRUE THEN 'active' ELSE 'inactive' END AS status 
         FROM doctors
+
         UNION ALL
+
         SELECT 
             staff_id AS id, 
-            staff_name AS full_name, 
+            TRIM(CONCAT(first_name, ' ', last_name)) AS full_name, 
             NULL AS email, 
             phone, 
             'staff' AS role, 
@@ -80,4 +93,5 @@ async def get_all(pool: Pool) -> list[StaffOut]:
         FROM staff
         """
     )
+
     return [StaffOut(**row) for row in rows]

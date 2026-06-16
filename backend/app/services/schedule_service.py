@@ -24,6 +24,8 @@ async def create_schedule_service(
                 slot_duration = EXCLUDED.slot_duration,
                 is_active = TRUE
         """, doctor_id, day_of_week, start_time, end_time, slot_duration)
+    
+    await publish_schedule_service(doctor_id)
 
     return {"message": "Schedule created/updated successfully"}
 
@@ -94,12 +96,13 @@ async def update_schedule_service(
         await conn.execute("""
             DELETE FROM slots
             WHERE doctor_id = $1
+            AND EXTRACT(DOW FROM slot_time) = ($2 + 1) % 7
             AND slot_time >= CURRENT_DATE
             AND status != 'booked'
             AND slot_id NOT IN (
                 SELECT slot_id FROM appointments
             )
-        """, doctor_id)
+        """, doctor_id, day_of_week)
 
     # regenerate slots
     await publish_schedule_service(doctor_id)
