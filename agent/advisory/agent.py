@@ -32,6 +32,7 @@ async def handle_advisory(request: ChatRequest, store: SessionStore) -> ChatResp
     3) Bring a list of current medications and supplements.
     4) Carry previous medical records or imaging reports if available.
     5) Stay hydrated and avoid skipping meals before your appointment.
+    The points should be short and concise within 5 points
     Return a JSON object with the following schema:
     {
       "protocols": ["instruction 1", "instruction 2", ...]
