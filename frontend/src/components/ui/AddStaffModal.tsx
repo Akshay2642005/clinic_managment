@@ -56,7 +56,7 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffMo
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h2 className="text-2xl font-bold font-serif text-gray-900">Add New Staff</h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -104,7 +104,6 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffMo
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-              placeholder="Optional"
             />
           </div>
 
