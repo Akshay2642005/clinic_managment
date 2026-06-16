@@ -6,6 +6,7 @@ class AppointmentBook(BaseModel):
     patient_id: int
     slot_id: int
     message: Optional[str] = None
+    previsit_tips: Optional[str] = None
 
 class AppointmentOut(BaseModel):
     appointment_id: int
@@ -30,3 +31,4 @@ class AppointmentDetailOut(AppointmentOut):
     doctor_name: str
     slot_time: datetime
     message: Optional[str] = None
+    previsit_tips: Optional[str] = None

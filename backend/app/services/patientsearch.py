@@ -48,6 +48,7 @@ async def search_patients(
             s.slot_time,
             a.status,
             a.message,
+            a.previsit_tips,
             a.created_at          AS appointment_created_at,
             a.updated_at          AS appointment_updated_at,
 
@@ -104,6 +105,7 @@ async def search_patients(
                 "slot_time":      row["slot_time"],
                 "status":         row["status"],
                 "message":        row["message"],
+                "previsit_tips":  row["previsit_tips"],
                 "created_at":     row["appointment_created_at"],
                 "updated_at":     row["appointment_updated_at"],
                 "doctor":         doctor,

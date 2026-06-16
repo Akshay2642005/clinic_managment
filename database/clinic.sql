@@ -22,6 +22,7 @@ CREATE TABLE "public"."appointments" (
   "created_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
   "message" text,
+  "previsit_tips" text,
   PRIMARY KEY ("appointment_id"),
   CONSTRAINT "appointments_doctor_id_fkey" FOREIGN KEY ("doctor_id") REFERENCES "doctors"("doctor_id"),
   CONSTRAINT "appointments_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "patients"("patient_id"),

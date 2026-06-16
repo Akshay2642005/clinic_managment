@@ -63,11 +63,12 @@ export const appointmentsApi = {
     });
     return response.data;
   },
-  bookAppointment: async (patientId: number, slotId: number, message?: string): Promise<any> => {
+  bookAppointment: async (patientId: number, slotId: number, message?: string, previsitTips?: string): Promise<any> => {
     const response = await api.post('/appointments/book', {
       patient_id: patientId,
       slot_id: slotId,
-      message: message
+      message: message,
+      previsit_tips: previsitTips
     });
     return response.data;
   },
