@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot } from 'lucide-react';
 import ChatMessage from './ChatMessage';
+import { detectSpecialty } from './matchingService';
 import { appointmentsApi, patientsApi } from '../../api/client';
 
 interface Message {
@@ -23,6 +24,9 @@ interface FlowData {
 
 type ChatState = 
   | 'IDLE'
+  | 'BOOK_HOW'
+  | 'BOOK_SYMPTOMS'
+  | 'BOOK_SEARCH_DOCTOR'
   | 'BOOK_DEPT'
   | 'BOOK_DOCTOR'
   | 'BOOK_DATE'
@@ -135,36 +139,110 @@ export default function ChatWidget() {
   // --- Flow Actions ---
 
   // 1. Book Appointment Flow
-  const startBookFlow = async () => {
+  const startBookFlow = () => {
     appendUserMessage('📅 Book Appointment');
-    setChatState('BOOK_DEPT');
+    setChatState('BOOK_HOW');
+    appendBotMessage('How would you like to book your appointment?', [
+      { label: 'Describe Symptoms', action: startSymptomsFlow },
+      { label: 'Search by Doctor', action: startDoctorSearchFlow }
+    ]);
+  };
+
+  const startSymptomsFlow = () => {
+    appendUserMessage('Describe Symptoms');
+    setChatState('BOOK_SYMPTOMS');
+    appendBotMessage('Please describe your symptoms.');
+  };
+
+  const startDoctorSearchFlow = () => {
+    appendUserMessage('Search by Doctor');
+    setChatState('BOOK_SEARCH_DOCTOR');
+    appendBotMessage('Enter the doctor\'s name.');
+  };
+
+  const handleSymptoms = async (text: string) => {
+    appendUserMessage(text);
+    setInput('');
     setLoading(true);
+
     try {
+      const match = await detectSpecialty(text);
+
+      if (!match.specialty) {
+        appendBotMessage("I couldn't determine the appropriate specialist. Please provide more details about your symptoms.");
+        return;
+      }
+
+      const specialty = match.specialty;
       const docs = await appointmentsApi.getDoctors();
-      const depts = Array.from(new Set(docs.map((d: any) => d.specialization))).filter(Boolean) as string[];
       
-      appendBotMessage('Please select a department.', depts.map(dept => ({
-        label: dept,
-        action: () => selectDepartment(dept, docs)
-      })));
-    } catch {
-      appendBotMessage('Failed to load departments. Please try again.');
-      showInitialMenu();
+      const specialtyLower = specialty.toLowerCase().trim();
+      const deptDocs = docs.filter((d: any) => {
+        if (!d.specialization) return false;
+        const specLower = d.specialization.toLowerCase().trim();
+        return specLower.includes(specialtyLower) || 
+               specialtyLower.includes(specLower) ||
+               (specialtyLower.includes('cardio') && specLower.includes('cardio')) ||
+               (specialtyLower.includes('derma') && specLower.includes('derma')) ||
+               (specialtyLower.includes('ortho') && specLower.includes('ortho')) ||
+               (specialtyLower.includes('physician') && specLower.includes('general')) ||
+               (specialtyLower.includes('general') && specLower.includes('physician')) ||
+               (specialtyLower.includes('ent') && specLower.includes('ent'));
+      });
+
+      if (deptDocs.length === 0) {
+        appendBotMessage(`I recommend the ${specialty} department, but no doctors are currently available for this specialty.`);
+        setChatState('IDLE');
+      } else {
+        setFlowData(prev => ({ ...prev, department: specialty }));
+        setChatState('BOOK_DOCTOR');
+        const reason = match.reason ? ` — ${match.reason}` : '';
+        appendBotMessage(`I recommend the **${specialty}** department${reason}. Please select a doctor.`, deptDocs.map((doc: any) => ({
+          label: `Dr. ${doc.first_name} ${doc.last_name}${doc.is_active === false ? ' (Unavailable)' : ''}`,
+          action: () => selectDoctor(doc.doctor_id, `Dr. ${doc.first_name} ${doc.last_name}`),
+          disabled: doc.is_active === false
+        })));
+      }
+    } catch (error: any) {
+      console.error('Symptom matching error:', error);
+      appendBotMessage("I couldn't determine the appropriate specialist. Please try again or use 'Search by Doctor'.");
     } finally {
       setLoading(false);
     }
   };
 
-  const selectDepartment = (dept: string, allDocs: any[]) => {
-    appendUserMessage(dept);
-    setFlowData(prev => ({ ...prev, department: dept }));
-    setChatState('BOOK_DOCTOR');
-    
-    const deptDocs = allDocs.filter(d => d.specialization === dept);
-    appendBotMessage('Please select a doctor.', deptDocs.map(doc => ({
-      label: `Dr. ${doc.first_name} ${doc.last_name}`,
-      action: () => selectDoctor(doc.doctor_id, `Dr. ${doc.first_name} ${doc.last_name}`)
-    })));
+  const handleDoctorSearch = async (name: string) => {
+    appendUserMessage(name);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const docs = await appointmentsApi.getDoctors();
+      const searchLower = name.toLowerCase();
+      const matchingDocs = docs.filter((d: any) => {
+        const fullName = `dr. ${d.first_name} ${d.last_name}`.toLowerCase();
+        return fullName.includes(searchLower) || d.first_name.toLowerCase().includes(searchLower) || d.last_name.toLowerCase().includes(searchLower);
+      });
+
+      if (matchingDocs.length === 0) {
+        appendBotMessage('No doctor found matching your search.');
+      } else if (matchingDocs.length === 1) {
+        const doc = matchingDocs[0];
+        const docName = `Dr. ${doc.first_name} ${doc.last_name}`;
+        selectDoctor(doc.doctor_id, docName);
+      } else {
+        setChatState('BOOK_DOCTOR');
+        appendBotMessage('Please select a doctor.', matchingDocs.map((doc: any) => ({
+          label: `Dr. ${doc.first_name} ${doc.last_name}`,
+          action: () => selectDoctor(doc.doctor_id, `Dr. ${doc.first_name} ${doc.last_name}`)
+        })));
+      }
+    } catch {
+      appendBotMessage('Failed to search doctors. Please try again.');
+      showInitialMenu();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectDoctor = (doctorId: number, doctorName: string) => {
@@ -304,6 +382,7 @@ export default function ChatWidget() {
       }
       
       appendBotMessage('Please select the appointment you want to reschedule.', upcoming.map(app => {
+        // @ts-ignore
         const doctorName = app.doctor ? `Dr. ${app.doctor.first_name} ${app.doctor.last_name}` : app.doctor_name || 'Doctor';
         return {
           label: `${doctorName} on ${app.slot_time.slice(0, 16).replace('T', ' ')}`,
@@ -451,6 +530,7 @@ export default function ChatWidget() {
       }
       
       appendBotMessage('Please select the appointment you want to cancel.', upcoming.map(app => {
+        // @ts-ignore
         const doctorName = app.doctor ? `Dr. ${app.doctor.first_name} ${app.doctor.last_name}` : app.doctor_name || 'Doctor';
         return {
           label: `${doctorName} on ${app.slot_time.slice(0, 16).replace('T', ' ')}`,
@@ -503,6 +583,15 @@ export default function ChatWidget() {
   // Free text fallback
   const sendFreeTextMessage = async (text: string) => {
     if (!text.trim() || loading) return;
+
+    if (chatState === 'BOOK_SYMPTOMS') {
+      handleSymptoms(text);
+      return;
+    }
+    if (chatState === 'BOOK_SEARCH_DOCTOR') {
+      handleDoctorSearch(text);
+      return;
+    }
 
     // Reset state if they type manually
     setChatState('IDLE');
